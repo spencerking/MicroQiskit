@@ -87,18 +87,15 @@ def simulate(qc, shots, get)
 
   outputMap = Array.new
 
-  idx = 0
-  while idx < qc.data.length()
-    gate = qc.data[idx]
+  for gate in qc.data
 
     if gate[0] == 'm'
       outputMap[gate[2]] = gate[1]
     elsif gate[0] == 'x' || gate[0] == 'h' || gate[0] == 'rx'
       j = gate.last
-      i0 = 0
-      while i0 < 2^j
-        i1 = 0
-        while i1 < 2^(qc.num_qubits - j - 1)
+      
+      for i0 in (0..2**j)
+        for i1 in (0..2**(qc.num_qubits - j - 1))
           b0 = i0 + 2^(j+1) * i1
           b1 = b0 + 2^j
           
@@ -117,11 +114,7 @@ def simulate(qc, shots, get)
             k[b0] = trn[0]
             k[b1] = trn[1]
           end
-
-          i1 = i1 + 1
         end
-
-        i0 = i0 + 1
       end
     elsif gate[0] == 'cx'
       s = gate[1]
@@ -129,28 +122,17 @@ def simulate(qc, shots, get)
       l = [s, t].min
       h = [s, t].max
 
-      i0 = 0
-      while i0 < 2^l
-
-        i1 = 0
-        while i1 < 2^(h - l - 1)
-          
-          i2 = 0
-          while i2 < 2^(qc.num_qubits - h - 1)
+      for i0 in (0..2**l)
+        for i1 in (0..2**(h - l - 1))          
+          for i2 in (0..2**(qc.num_qubits - h - 1)) 
             b0 = i0 + 2^(l + 1) * i1 + 2^(h + 1) * i2 + 2^s
             b1 = b0 + 2^t
             tmp0 = k[b0]
             tmp1 = k[b1]
             k[b0] = tmp1
             k[b1] = tmp0
-
-            i2 = i2 + 1
           end
-
-          i1 = i1 + 1
         end
-
-        i0 = i0 + 1
       end
     end
 
@@ -164,37 +146,36 @@ def simulate(qc, shots, get)
         idx_numq = idx_numq + 1
       end
 
-      i = 0
-      while i < qc.data.length()
-        gate = qc.data[i]
-        
-        j = 0
-        while j < qc.num_qubits
+      for gate in qc.data        
+        for j in (0..qc.num_qubits)
           if gate.last == j && m[j]
             puts 'Incorrect or missing measure command'
           end
           m[j] = (gate[0] == 'm' && gate[1] == j && gate[2] == j)
-          j = j + 1
         end
-          
-
-        i = i + 1
       end
 
-
       probs = []
+
       i = 0
       #puts 'k length'
       #puts k.length()
       #puts k
       # TODO: undefined method `[]' for nil:NilClass
       while i < k.length()
-        puts i
-        puts k[i][0].class
-        puts k[i][1].class
+        #puts i
+        #puts k[i][0].class
+        #puts k[i][1].class
         probs.push(k[i][0]**2 + k[i][1]**2)
         i = i + 1
       end
+
+      # TODO:
+      # This is more similar to the Python implementation, still has the same error as the above version
+      # for e in k
+      #   puts e
+      #   probs.push(e[0]**2 + e[1]**2)
+      # end
 
       if get == 'counts' || get == 'memory'
         me = []
@@ -253,8 +234,6 @@ def simulate(qc, shots, get)
         return counts
       end
     end
-
-    idx = idx + 1
   end
 end
 
